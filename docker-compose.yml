@@ -1,0 +1,51 @@
+
+services:
+  api:
+    build: .
+    container_name: cc_mini_api
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - elasticsearch
+    volumes:
+      - ./:/app
+
+  worker:
+    build: .
+    container_name: cc_mini_worker
+    env_file:
+      - ./backend/.env
+    command: ["celery", "-A", "celery_worker", "worker", "--loglevel=info"]
+    depends_on:
+      - redis
+      - elasticsearch
+    volumes:
+      - ./:/app
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: cc_mini_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: cc_mini_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  mongo_data:
+  es_data:
+  redis_data:
